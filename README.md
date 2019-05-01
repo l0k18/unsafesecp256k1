@@ -1,10 +1,36 @@
 # secp256k1-go
 
-This package provides bindings (using cgo) to the upstream [https://github.com/bitcoin-core/secp256k1](libsecp256k1) C library.
+~~This package provides bindings (using cgo) to the upstream [https://github.com/bitcoin-core/secp256k1](libsecp256k1) C library.~~
 
-It exposes several high level functions for elliptic curve operations over the 
-secp256k1 curve, namely ECDSA, point & scalar operations, ECDH, and recoverable
-signatures. 
+This package provides bindings to the 'unsafe' secp256k1 C library found here: [https://github.com/llamasoft/secp256k1_fast_unsafe](https://github.com/llamasoft/secp256k1_fast_unsafe).
+
+You might be wondering, if you are not well versed in the important security characteristics of encryption libraries, why one would want an 'unsafe' version:
+
+- Constant Time implementations of cryptographic primitives is very important for security in the use case of interactive sessions with encryption - the timing of various operations that can be provoked by an attacker can reveal information about the internal state and thus potentially lead to finding a way to breach the security and gain unauthorised access.
+
+- Memory utilisation - most elliptic curve signature algorithms use some amount of pre-computation to accelerate scalar multiplication. Mostly the libraries are targeted to work adequately on a very low resource machine, very nearly embedded grade, ARM RISC processors and similar. But for running servers, if latency is an issue it is worth paying for more memory and using apps that make more use of more memory. So for performance critical EC signing performance, it makes a lot of sense to allow the programmer to enable a much larger precomp to reduce the time per operation and increase throughput and maybe lower latency a little.
+
+- Most good encryption libraries have functions that sanitise secret data before freeing it. This is important for reducing the chances of malicious processes gaining access by searching newly freed memory.
+
+### Use cases of ECDSA with relaxed security requirements
+
+Obviously, removing the overhead of memory wiping, and constant time operations is out of the question if one is using the EC library to auth data for encrypted interactive sessions.
+
+**However**, the case of the use of elliptic curves in cryptocurrency transaction authentication does not have several of the requirements for HMAC use of ECDSA:
+
+- The crypto server is not running interactive services with untrusted peers when it is verifying transactions, and it produces very little useful information for an attacker aside from that maybe it can fingerprint the algorithm by sending crafted transactions. But one failure in a cryptocurrency network does not breach its security, and none of the data is secret anyway, except for the keys required to generate the signatures, which happens offline and not in interactive sessions.
+
+- The crypto server, when providing data for miner workers, really should not be doing even one thing that is unnecessary. Constant time signature verifications is exactly NOT what you want for a cryptocurrency server. You want to rip through verification as quickly as possible so you are able to generate new block templates and/or relay the received transactions/blocks.
+
+- Cryptocurrency servers often provide data to other applications like web wallets, explorers, payment processing, and the like. The operators of such services will also prefer to minimise the costs and processing delays whenever possible.
+
+Because security relating to memory containing secrets is irrelevant for this case, and very often a cryptocurrency server is running alone inside an isolated virtualization environment where there is nearly no possibility of any other process seeing the memory, either inside or outside the container.
+
+Further, when one wants optimal response time and throughput from a cryptocurrency server, every nanosecond you can shave from verification of signatures reduces the delay for mining and improves the network's latency in general.
+
+So constant time, bigger memory use, and memory wiping are not important for verification of public transaction data, except maybe in as far as it may create a way to breach a cryptocurrency wallet connected to the server, but this is external to the transaction verification and witness signature verification. Faster is better, and there is no data in a full node that is secret anyway. Only wallets are sensitive.
+
+It exposes several high level functions for elliptic curve operations over the secp256k1 curve, namely ECDSA, point & scalar operations, ECDH, and recoverable signatures. 
 
 ## Warning
 

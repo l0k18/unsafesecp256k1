@@ -17,7 +17,7 @@ static void freePubkeyArray(secp256k1_pubkey **a) {
         free(a);
 }
 */
-// #cgo LDFLAGS: ${SRCDIR}/c-secp256k1/.libs/libsecp256k1.a -lgmp
+// #cgo LDFLAGS: c-secp256k1/.libs/libsecp256k1.a -lgmp
 import "C"
 
 import (
@@ -330,23 +330,23 @@ func EcPubkeyCreate(ctx *Context, seckey []byte) (int, *PublicKey, error) {
 	return result, pk, nil
 }
 
-// EcPrivkeyNegate will negate a public key in place. The return code is
-// 1 if the operation was successful, or 0 if the length was invalid.
-func EcPrivkeyNegate(ctx *Context, seckey []byte) (int, error) {
-	if len(seckey) != LenPrivateKey {
-		return 0, errors.New(ErrorPrivateKeySize)
-	}
+// // EcPrivkeyNegate will negate a public key in place. The return code is
+// // 1 if the operation was successful, or 0 if the length was invalid.
+// func EcPrivkeyNegate(ctx *Context, seckey []byte) (int, error) {
+// 	if len(seckey) != LenPrivateKey {
+// 		return 0, errors.New(ErrorPrivateKeySize)
+// 	}
 
-	result := int(C.secp256k1_ec_privkey_negate(ctx.ctx, (*C.uchar)(unsafe.Pointer(&seckey[0]))))
-	return result, nil
-}
+// 	result := int(C.secp256k1_ec_privkey_negate(ctx.ctx, (*C.uchar)(unsafe.Pointer(&seckey[0]))))
+// 	return result, nil
+// }
 
-// EcPubkeyNegate will negate a public key object in place. The return code
-// is always 1.
-func EcPubkeyNegate(ctx *Context, pubkey *PublicKey) (int, error) {
-	result := int(C.secp256k1_ec_pubkey_negate(ctx.ctx, pubkey.pk))
-	return result, nil
-}
+// // EcPubkeyNegate will negate a public key object in place. The return code
+// // is always 1.
+// func EcPubkeyNegate(ctx *Context, pubkey *PublicKey) (int, error) {
+// 	result := int(C.secp256k1_ec_pubkey_negate(ctx.ctx, pubkey.pk))
+// 	return result, nil
+// }
 
 // EcPrivkeyTweakAdd modifies the provided `seckey` by adding tweak to
 // it. The return code is 0 if `tweak` was out of range (chance of
